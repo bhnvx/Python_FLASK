@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <style>
+    #mapwrap{position:relative;overflow:hidden;}
+    .category, .category *{margin:0;padding:0;color:#000;}
+    .category {position:absolute;overflow:hidden;top:10px;left:10px;width:405px;height:50px;z-index:10;border:1px solid black;font-family:'Malgun Gothic','맑은 고딕',sans-serif;font-size:12px;text-align:center;background-color:#fff;}
+    .category .menu_selected {background:#FF5F4A;color:#fff;border-left:1px solid #915B2F;border-right:1px solid #915B2F;margin:0 -1px;}
+    .category li{list-style:none;float:left;width:50px;height:45px;padding-top:5px;cursor:pointer;}
+    .category .ico_comm {display:block;margin:0 auto 2px;width:22px;height:26px;background:url('https://devtalk.kakao.com/uploads/default/original/2X/f/fa6989c66efd4d981cf946ea501d94f068f4b43f.png') no-repeat;}
+    .category .ico_coffee {background-position:-10px -144px;}
+    .category .ico_store {background-position:-10px -180px;}
+    .category .ico_hospital {background-position:-10px -72px;}
+    .category .ico_depstore {background-position:-10px -36px;}
+    .category .ico_school {background-position:-10px -211px;}
+    .category .ico_food {background-position:-10px -108px;}
+    .category .ico_cinema {background-position:-11px -275px;}
+    .category .ico_bread {background-position:-10px -243px;}
+    .circle_strong{position:absolute;top:30px;left:50px;text-align:center;line-height:40px;font-size:24px;}
+    #loading { width: 100%; height: 100%; top: 0px; left: 0px; position: fixed; display: block; opacity: 0.7; background-color: #fff; z-index: 99; text-align: center; }
+    #loading-image { position: absolute; top: 50%; left: 50%; z-index: 100; }
+    </style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <!-- The above 2 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Note there is no responsive meta tag here -->
+
+    <link rel="icon" href="{{ url_for('static', filename='icon/favicon.ico') }}">
+
+    <title>살기 좋은 우리 동네 찾기</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static', filename='style/bootstrap.min.css') }}" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="{{ url_for('static', filename='assets/css/ie10-viewport-bug-workaround.css') }}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static', filename='style/start.css') }}" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="{{ url_for('static', filename='style/start.css') }}"></script><![endif]-->
+    <script src="{{ url_for('static', filename='assets/js/ie-emulation-modes-warning.js') }}"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+  <div id="loading">
+  <img id="loading-image" src="{{ url_for('static', filename='icon/ajax-loader.gif')}}" alt="Loading..." />
+  </div>
+    <!-- Fixed navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <!-- The mobile navbar-toggle button can be safely removed since you do not need it in a non-responsive implementation -->
+          <a class="navbar-brand" href="{{ url_for('start') }}">AcornFinalProject</a>
+        </div>
+        <!-- Note that the .navbar-collapse and .collapse classes have been removed from the #navbar -->
+        <div id="navbar">
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="{{ url_for('home') }}">Home</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">소개 <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li class="dropdown-header">팀장</li>
+                <li><a href="#">백지현</a></li>
+                <li role="separator" class="divider"></li>
+                <li class="dropdown-header">팀원</li>
+                <li><a href="#">김현지</a></li>
+                <li><a href="#">김경환</a></li>
+                <li role="separator" class="divider"></li>
+                <li class="dropdown-header">전 팀원</li>
+                <li><a href="#">김진혁</a></li>
+                <li><a href="#">한현민</a></li>
+              </ul>
+            </li>
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="{{ url_for('signout') }}">로그아웃</a></li>
+          </ul>
+        </div><!--/.nav-collapse -->
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="page-header">
+        <div id="mapwrap">
+          <div id="map" style="width:100%;height:350px;"></div>
+          <div class="category">
+            <ul>
+              <li id="coffeeMenu" onclick="changeMarker('coffee')">
+                <span class="ico_comm ico_coffee"></span>카페</li>
+              <li id="storeMenu" onclick="changeMarker('store')">
+                <span class="ico_comm ico_store"></span>편의점</li>
+              <li id="hospitalMenu" onclick="changeMarker('hospital')">
+                <span class="ico_comm ico_hospital"></span>병원</li>
+              <li id="depstoreMenu" onclick="changeMarker('depstore')">
+                <span class="ico_comm ico_depstore"></span>백화점</li>
+              <li id="schoolMenu" onclick="changeMarker('school')">
+                <span class="ico_comm ico_school"></span>학교</li>
+              <li id="foodMenu" onclick="changeMarker('food')">
+                <span class="ico_comm ico_food"></span>음식점</li>
+              <li id="breadMenu" onclick="changeMarker('bread')">
+                <span class="ico_comm ico_bread"></span>제과점</li>
+              <li id="cinemaMenu" onclick="changeMarker('cinema')">
+                <span class="ico_comm ico_cinema"></span>영화관</li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="store_lat" style="display: none;">
+		{% for i in store_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="store_lng" style="display: none;">
+		{% for i in store_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="coffee_lat" style="display: none;">
+		{% for i in cafe_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="coffee_lng" style="display: none;">
+		{% for i in cafe_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="hos_lat" style="display: none;">
+		{% for i in hos_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="hos_lng" style="display: none;">
+		{% for i in hos_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="dep_lat" style="display: none;">
+		{% for i in dep_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="dep_lng" style="display: none;">
+		{% for i in dep_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="sch_lat" style="display: none;">
+		{% for i in sch_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="sch_lng" style="display: none;">
+		{% for i in sch_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="food_lat" style="display: none;">
+		{% for i in food_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="food_lng" style="display: none;">
+		{% for i in food_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+        <div id="brd_lat" style="display: none;">
+		{% for i in brd_lat %}
+			{{ i }},
+		{% endfor %}
+        </div>
+        <div id="brd_lng" style="display: none;">
+		{% for i in brd_lng %}
+			{{ i }},
+		{% endfor %}
+        </div>
+
+          <div id="cine_lat" style="display: none;">
+		{% for i in cine_lat %}
+			{{ i }},
+		{% endfor %}
+          </div>
+          <div id="cine_lng" style="display: none;">
+		{% for i in cine_lng %}
+			{{ i }},
+		{% endfor %}
+          </div>
+          <div id="value"></div>
+          <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=6cdf352a6c95daa50d9f554e1c18631c"></script>
+          <script>
+        var mapContainer = document.getElementById('map'),
+        mapOption = {center:new kakao.maps.LatLng(37.498004414546934, 127.02770621963765), level: 3};
+        var map = new kakao.maps.Map(mapContainer, mapOption);
+
+        var coffee_list_lat = document.getElementById("coffee_lat").innerText.split(',');
+        var coffee_list_lng = document.getElementById("coffee_lng").innerText.split(',');
+        var coffeePositions = new Array();
+        for(var idx=0; idx<coffee_list_lat.length; idx++){
+        var coffee_data_lat = coffee_list_lat[idx];
+        var coffee_data_lng = coffee_list_lng[idx];
+        coffeePositions.push(new kakao.maps.LatLng(coffee_data_lat, coffee_data_lng));}
+
+        var store_list_lat = document.getElementById("store_lat").innerText.split(',');
+        var store_list_lng = document.getElementById("store_lng").innerText.split(',');
+        var storePositions = new Array();
+        for(var idx=0; idx<store_list_lat.length; idx++){
+        var store_data_lat = store_list_lat[idx];
+        var store_data_lng = store_list_lng[idx];
+        storePositions.push(new kakao.maps.LatLng(store_data_lat, store_data_lng));}
+
+        var hospital_list_lat = document.getElementById("hos_lat").innerText.split(',');
+        var hospital_list_lng = document.getElementById("hos_lng").innerText.split(',');
+        var hospitalPositions = new Array();
+        for(var idx=0; idx<hospital_list_lat.length; idx++){
+        var hospital_data_lat = hospital_list_lat[idx];
+        var hospital_data_lng = hospital_list_lng[idx];
+        hospitalPositions.push(new kakao.maps.LatLng(hospital_data_lat, hospital_data_lng));}
+
+        var depstore_list_lat = document.getElementById("dep_lat").innerText.split(',');
+        var depstore_list_lng = document.getElementById("dep_lng").innerText.split(',');
+        var depstorePositions = new Array();
+        for(var idx=0; idx<depstore_list_lat.length; idx++){
+        var depstore_data_lat = depstore_list_lat[idx];
+        var depstore_data_lng = depstore_list_lng[idx];
+        depstorePositions.push(new kakao.maps.LatLng(depstore_data_lat, depstore_data_lng));}
+
+        var food_list_lat = document.getElementById("food_lat").innerText.split(',');
+        var food_list_lng = document.getElementById("food_lng").innerText.split(',');
+        var foodPositions = new Array();
+        for(var idx=0; idx<food_list_lat.length; idx++){
+        var food_data_lat = food_list_lat[idx];
+        var food_data_lng = food_list_lng[idx];
+        foodPositions.push(new kakao.maps.LatLng(food_data_lat, food_data_lng));}
+
+        var school_list_lat = document.getElementById("sch_lat").innerText.split(',');
+        var school_list_lng = document.getElementById("sch_lng").innerText.split(',');
+        var schoolPositions = new Array();
+        for(var idx=0; idx<school_list_lat.length; idx++){
+        var school_data_lat = school_list_lat[idx];
+        var school_data_lng = school_list_lng[idx];
+        schoolPositions.push(new kakao.maps.LatLng(school_data_lat, school_data_lng));}
+
+        var bread_list_lat = document.getElementById("brd_lat").innerText.split(',');
+        var bread_list_lng = document.getElementById("brd_lng").innerText.split(',');
+        var breadPositions = new Array();
+        for(var idx=0; idx<bread_list_lat.length; idx++){
+        var bread_data_lat = bread_list_lat[idx];
+        var bread_data_lng = bread_list_lng[idx];
+        breadPositions.push(new kakao.maps.LatLng(bread_data_lat, bread_data_lng));}
+
+        var cinema_list_lat = document.getElementById("cine_lat").innerText.split(',');
+        var cinema_list_lng = document.getElementById("cine_lng").innerText.split(',');
+        var cinemaPositions = new Array();
+        for(var idx=0; idx<cinema_list_lat.length; idx++){
+        var cinema_data_lat = cinema_list_lat[idx];
+        var cinema_data_lng = cinema_list_lng[idx];
+        cinemaPositions.push(new kakao.maps.LatLng(cinema_data_lat, cinema_data_lng));}
+
+        var markerImageSrc = 'https://devtalk.kakao.com/uploads/default/original/2X/f/fa6989c66efd4d981cf946ea501d94f068f4b43f.png';
+        coffeeMarkers = [],storeMarkers = [], hospitalMarkers = [], depstoreMarkers = [],
+        foodMarkers = [], cinemaMarkers = [], breadMarkers = [], schoolMarkers = [];
+
+        createCoffeeMarkers();
+        createStoreMarkers();
+        createHospitalMarkers();
+        createDepstoreMarkers();
+        createFoodMarkers();
+        createCinemaMarkers();
+        createBreadMarkers();
+        createSchoolMarkers();
+
+        changeMarker('coffee');
+
+        function createMarkerImage(src, size, options) {
+        var markerImage = new kakao.maps.MarkerImage(src, size, options);
+        return markerImage;}
+
+        function createMarker(position, image) {
+        var marker = new kakao.maps.Marker({
+        position: position,
+        image: image});
+        return marker;}
+
+        function createCoffeeMarkers() {
+        for (var i = 0; i < coffeePositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 140),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(coffeePositions[i], markerImage);
+        coffeeMarkers.push(marker);}}
+
+        function setCoffeeMarkers(map) {
+        for (var i = 0; i < coffeeMarkers.length; i++) {
+        coffeeMarkers[i].setMap(map);}}
+
+        function createStoreMarkers() {
+        for (var i = 0; i < storePositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 175),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(storePositions[i], markerImage);
+        storeMarkers.push(marker);}}
+
+        function setStoreMarkers(map) {
+        for (var i = 0; i < storeMarkers.length; i++) {
+        storeMarkers[i].setMap(map);}}
+
+        function createHospitalMarkers() {
+        for (var i = 0; i < hospitalPositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 65),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(hospitalPositions[i], markerImage);
+        hospitalMarkers.push(marker);}}
+
+        function setHospitalMarkers(map) {
+        for (var i = 0; i < hospitalMarkers.length; i++) {
+        hospitalMarkers[i].setMap(map);}}
+
+        function createDepstoreMarkers() {
+        for (var i = 0; i < depstorePositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 35),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(depstorePositions[i], markerImage);
+        depstoreMarkers.push(marker);}}
+
+        function setDepstoreMarkers(map) {
+        for (var i = 0; i < depstoreMarkers.length; i++) {
+        depstoreMarkers[i].setMap(map);}}
+
+        function createSchoolMarkers() {
+        for (var i = 0; i < schoolPositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 206),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(schoolPositions[i], markerImage);
+        schoolMarkers.push(marker);}}
+
+        function setSchoolMarkers(map) {
+        for (var i = 0; i < schoolMarkers.length; i++) {
+        schoolMarkers[i].setMap(map);}}
+
+        function createFoodMarkers() {
+        for (var i = 0; i < foodPositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 108),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(foodPositions[i], markerImage);
+        foodMarkers.push(marker);}}
+
+        function setFoodMarkers(map) {
+        for (var i = 0; i < foodMarkers.length; i++) {
+        foodMarkers[i].setMap(map);}}
+
+        function createBreadMarkers() {
+        for (var i = 0; i < breadPositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 238),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(breadPositions[i], markerImage);
+        breadMarkers.push(marker);}}
+
+        function setBreadMarkers(map) {
+        for (var i = 0; i < breadMarkers.length; i++) {
+        breadMarkers[i].setMap(map);}}
+
+        function createCinemaMarkers() {
+        for (var i = 0; i < cinemaPositions.length; i++) {
+        var imageSize = new kakao.maps.Size(29, 33),
+        imageOptions = {spriteOrigin: new kakao.maps.Point(45, 270),
+        spriteSize: new kakao.maps.Size(72, 307)};
+
+        var markerImage = createMarkerImage(markerImageSrc, imageSize, imageOptions),
+        marker = createMarker(cinemaPositions[i], markerImage);
+        cinemaMarkers.push(marker);}}
+
+        function setCinemaMarkers(map) {
+        for (var i = 0; i < cinemaMarkers.length; i++) {
+        cinemaMarkers[i].setMap(map);}}
+
+        function changeMarker(type){
+        var coffeeMenu = document.getElementById('coffeeMenu');
+        var storeMenu = document.getElementById('storeMenu');
+        var hospitalMenu = document.getElementById('hospitalMenu');
+        var depstoreMenu = document.getElementById('depstoreMenu');
+        var cinemaMenu = document.getElementById('cinemaMenu');
+        var foodMenu = document.getElementById('foodMenu');
+        var schoolMenu = document.getElementById('schoolMenu');
+        var breadMenu = document.getElementById('breadMenu');
+
+        if (type === 'coffee') {
+
+        coffeeMenu.className = 'menu_selected';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(map);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+
+        } else if (type === 'store') {
+        coffeeMenu.className = '';
+        storeMenu.className = 'menu_selected';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(map);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+
+        } else if (type === 'hospital') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = 'menu_selected';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(map);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+
+        } else if (type === 'depstore') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = 'menu_selected';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(map);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+
+        } else if (type === 'food') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = 'menu_selected';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(map);
+
+        } else if (type === 'school') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = 'menu_selected';
+        breadMenu.className = '';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(null);
+        setSchoolMarkers(map);
+        setFoodMarkers(null);
+
+        } else if (type === 'bread') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = 'menu_selected';
+        cinemaMenu.className = '';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(null);
+        setBreadMarkers(map);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+
+        } else if (type === 'cinema') {
+        coffeeMenu.className = '';
+        storeMenu.className = '';
+        hospitalMenu.className = '';
+        depstoreMenu.className = '';
+        foodMenu.className = '';
+        schoolMenu.className = '';
+        breadMenu.className = '';
+        cinemaMenu.className = 'menu_selected';
+
+        setCoffeeMarkers(null);
+        setStoreMarkers(null);
+        setHospitalMarkers(null);
+        setDepstoreMarkers(null);
+        setCinemaMarkers(map);
+        setBreadMarkers(null);
+        setSchoolMarkers(null);
+        setFoodMarkers(null);
+        }};
+        </script>
+      </div>
+        <img src="{{ url_for('static', filename='images/Bus.png') }}" alt="my plot1" height="200" width="300">
+        <img src="{{ url_for('static', filename='images/Edu.png') }}" alt="my plot2" height="200" width="300">
+        <img src="{{ url_for('static', filename='images/Pub.png') }}" alt="my plot3" height="200" width="300">
+        <img src="{{ url_for('static', filename='images/Seq.png') }}" alt="my plot4" height="200" width="300">
+        <img src="{{ url_for('static', filename='images/Conv.png') }}" alt="my plot5" height="200" width="300">
+    </div>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="{{ url_for('static', filename='assets/js/ie10-viewport-bug-workaround.js') }}"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="{{ url_for('static', filename='js/circle-progress.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/examples.js') }}"></script>
+    <script>$(window).ready(function() {$('#loading').hide();});</script>
+  </body>
+</html>
